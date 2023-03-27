@@ -1,0 +1,16 @@
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\bin\Debug\net5.0\PaintServer.exe
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\bin\Debug\net5.0\PaintServer.deps.json
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\bin\Debug\net5.0\PaintServer.runtimeconfig.json
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\bin\Debug\net5.0\PaintServer.runtimeconfig.dev.json
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\bin\Debug\net5.0\PaintServer.dll
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\bin\Debug\net5.0\ref\PaintServer.dll
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\bin\Debug\net5.0\PaintServer.pdb
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.csproj.AssemblyReference.cache
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.AssemblyInfoInputs.cache
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.AssemblyInfo.cs
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.csproj.CoreCompileInputs.cache
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.dll
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\ref\PaintServer.dll
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.pdb
+C:\Users\jasie\Desktop\lab6\PaintServer\PaintServer\obj\Debug\net5.0\PaintServer.genruntimeconfig.cache

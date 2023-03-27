@@ -16,6 +16,9 @@ using Winforms = System.Windows.Forms;
 using System.ComponentModel;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Net.Sockets;
+using System.Net;
+using System.Diagnostics;
 
 namespace PaintClient
 {
@@ -26,7 +29,8 @@ namespace PaintClient
     {
         Task drawTask;
         BlockingCollection<Tuple<Point, SolidColorBrush>> pointQueue;
-        bool ifDrawPoint = true;
+        bool drawGap = true;
+        bool connectedToServer = false;
         public MainWindow()
         {
             InitializeComponent();
@@ -58,14 +62,13 @@ namespace PaintClient
 
         public void CanvasMouseUp(object sender, MouseEventArgs e)
         {
-            ifDrawPoint = true;
+            drawGap = true;
         }
 
         public void DrawLine(Tuple<Point, SolidColorBrush> point)
         {
                 Line line = new Line()
                 {
-
                     X1 = point.Item1.X-1,
                     Y1 = point.Item1.Y-1,
                     X2 = point.Item1.X,
@@ -84,8 +87,8 @@ namespace PaintClient
                 try
                 {
                     var point = pointQueue.Take();
-                    ifDrawPoint = !ifDrawPoint;
-                    if (ifDrawPoint)
+                    drawGap = !drawGap;
+                    if (drawGap)
                     {                      
                         Dispatcher.Invoke(() =>
                         {
@@ -100,6 +103,7 @@ namespace PaintClient
                             };
                             paintCanvas.Children.Add(line);
                         });
+                        pointQueue.Add(point);
                     }
                     else
                         lastPoint = point;
@@ -109,6 +113,66 @@ namespace PaintClient
 
                 }
             }
+        }
+
+        private void ConnectClick(object sender, RoutedEventArgs args)
+        {
+            try
+            {
+                UdpClient udpClient = new UdpClient();
+                string ip = ipTextBox.Text;
+                int port = int.Parse(portTextBox.Text);
+
+                udpClient.Connect(ip, port: port);
+
+                Byte[] sendBytes = Encoding.ASCII.GetBytes("connect");
+                udpClient.Send(sendBytes, sendBytes.Length);
+
+                IPEndPoint remoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                Byte[] receiveBytes = udpClient.Receive(ref remoteIpEndPoint);
+                int returnData = BitConverter.ToInt32(receiveBytes);
+
+                Debug.WriteLine("Odebrano: " + returnData.ToString());
+
+                connectedToServer = true;
+                ManageConnectionChange();
+                udpClient.Close();
+            }
+            catch(Exception e)
+            {
+                Debug.WriteLine(e.ToString());
+            }
+        }
+
+        private void DisconnectClick(object sender, RoutedEventArgs args)
+        {
+            try
+            {
+                UdpClient udpClient = new UdpClient();
+                string ip = ipTextBox.Text;
+                int port = int.Parse(portTextBox.Text);
+
+                udpClient.Connect(ip, port: port);
+                Byte[] sendBytes = Encoding.ASCII.GetBytes("disconnect");
+                udpClient.Send(sendBytes, sendBytes.Length);
+
+                connectedToServer = false;
+                ManageConnectionChange();
+                udpClient.Close();
+            }
+            catch(Exception e)
+            {
+                Debug.WriteLine(e.ToString());
+            }
+        }
+
+        private void ManageConnectionChange()
+        {
+            ipTextBox.IsEnabled = !connectedToServer;
+            portTextBox.IsEnabled = !connectedToServer;
+            connectButton.IsEnabled = !connectedToServer;
+
+            disconnectButton.IsEnabled = connectedToServer;
         }
     }
 }
