@@ -19,14 +19,14 @@ namespace PaintServer
         static UdpClient drawDataServer;
 
         static List<IPEndPoint> users;
-        static BlockingCollection<Tuple<int, byte[]>> drawData;
+        static BlockingCollection<byte[]> drawData;
 
         const int connectPort = 6666;
         const int drawPort = 5555;
         static void Main(string[] args)
         {
             users = new List<IPEndPoint>();
-            drawData = new BlockingCollection<Tuple<int, byte[]>>(new ConcurrentQueue<Tuple<int, byte[]>>());
+            drawData = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
             connectServer = new UdpClient(connectPort);
             drawDataServer = new UdpClient(drawPort);
 
@@ -79,15 +79,35 @@ namespace PaintServer
 
                     //determine what kind of data is this
 
-                    int userId = users.BinarySearch(clientEndPoint);
-                    drawData.Add(new Tuple<int, byte[]>(userId, receivedBytes));
-                    Console.WriteLine("Received " + Encoding.ASCII.GetString(receivedBytes) + " from user " + userId);
+                    byte userId = Convert.ToByte(GetUserId(clientEndPoint));
+
+                    byte[] storeData = new byte[receivedBytes.Length + 1];
+                    storeData[0] = userId;
+                    Buffer.BlockCopy(receivedBytes, 0, storeData, 1, receivedBytes.Length);
+                    drawData.Add(storeData);
+
+                    /*byte[] x = new byte[8];
+                    byte[] y = new byte[8];
+                    Array.Copy(receivedBytes, 0, x, 0, 8);
+                    Array.Copy(receivedBytes, 8, y, 0, 8);
+                    Console.WriteLine("Received " + BitConverter.ToDouble(x)+" "+BitConverter.ToDouble(y) + " from user " + userId);*/
+                    //Console.WriteLine(receivedBytes.Length.ToString() +" "+ userId.GetType().ToString());
                 }
                 catch(Exception e)
                 {
                     Debug.WriteLine(e.ToString());
                 }
             }
+        }
+
+        private static int GetUserId(IPEndPoint user)
+        {
+            foreach(IPEndPoint u in users)
+            {
+                if (u.Equals(user))
+                    return users.IndexOf(u);
+            }
+            return -1;
         }
     }
 }

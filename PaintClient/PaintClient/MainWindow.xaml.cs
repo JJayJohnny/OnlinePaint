@@ -62,6 +62,25 @@ namespace PaintClient
             if(e.LeftButton == MouseButtonState.Pressed)
             {
                 pointQueue.Add(new Tuple<Point, SolidColorBrush>(point, (SolidColorBrush)colorPicker.Background));
+
+                //send data to server
+                if (connectedToServer)
+                {
+                    try
+                    {
+                        string ip = ipTextBox.Text;
+                        byte[] xByte = BitConverter.GetBytes(point.X);
+                        byte[] yByte = BitConverter.GetBytes(point.Y);
+                        byte[] message = new byte[xByte.Length + yByte.Length];
+                        Buffer.BlockCopy(xByte, 0, message, 0, xByte.Length);
+                        Buffer.BlockCopy(yByte, 0, message, xByte.Length, yByte.Length);
+                        udpClient.Send(message, message.Length, ip, drawServerPort);
+                    }
+                    catch(Exception ex)
+                    {
+                        Debug.WriteLine(ex.ToString());
+                    }
+                }
             }
         }
 
