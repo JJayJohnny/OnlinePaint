@@ -15,7 +15,8 @@ namespace PaintServer
         static Task receiveDataTask;
         static Task sendDataTask;
 
-        static UdpClient connectClient;
+        static UdpClient connectServer;
+        static UdpClient drawDataServer;
 
         static List<IPEndPoint> users;
 
@@ -24,12 +25,15 @@ namespace PaintServer
         static void Main(string[] args)
         {
             users = new List<IPEndPoint>();
-            connectClient = new UdpClient(connectPort);
+            connectServer = new UdpClient(connectPort);
+            drawDataServer = new UdpClient(drawPort);
+
             connectTask = Task.Factory.StartNew(() => ListenConnections());
+            receiveDataTask = Task.Factory.StartNew(() => ReceiveData());
 
-            Console.WriteLine("Connection server running on port: " + ((IPEndPoint)connectClient.Client.LocalEndPoint).Port);
+            Console.WriteLine("Connection server running on port: " + ((IPEndPoint)connectServer.Client.LocalEndPoint).Port);
 
-            Task.WaitAll(connectTask);
+            Task.WaitAll(connectTask, receiveDataTask);
         }
 
         private static void ListenConnections()
@@ -39,14 +43,14 @@ namespace PaintServer
                 try
                 {
                     IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    Byte[] receiveBytes = connectClient.Receive(ref clientEndPoint);
+                    Byte[] receiveBytes = connectServer.Receive(ref clientEndPoint);
                     string message = Encoding.ASCII.GetString(receiveBytes);
                     if(message == "connect")
                     {
                         Console.WriteLine(clientEndPoint.ToString() + " connected");
                         users.Add(clientEndPoint);
-                        byte[] reply = BitConverter.GetBytes(((IPEndPoint)connectClient.Client.LocalEndPoint).Port);
-                        connectClient.Send(reply, reply.Length, clientEndPoint);
+                        byte[] reply = BitConverter.GetBytes(((IPEndPoint)drawDataServer.Client.LocalEndPoint).Port);
+                        connectServer.Send(reply, reply.Length, clientEndPoint);
                     }
                     if(message == "disconnect")
                     {
@@ -59,6 +63,11 @@ namespace PaintServer
                     Debug.WriteLine(e.ToString());
                 }
             }
+        }
+
+        private static void ReceiveData()
+        {
+
         }
     }
 }

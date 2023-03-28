@@ -31,10 +31,15 @@ namespace PaintClient
         BlockingCollection<Tuple<Point, SolidColorBrush>> pointQueue;
         bool drawGap = true;
         bool connectedToServer = false;
+        UdpClient udpClient;
+        int drawServerPort;
+
         public MainWindow()
         {
             InitializeComponent();
             pointQueue = new BlockingCollection<Tuple<Point, SolidColorBrush>>(new ConcurrentQueue<Tuple<Point, SolidColorBrush>>());
+            udpClient = new UdpClient();
+
             drawTask = Task.Factory.StartNew(() => DrawTask());
         }
 
@@ -119,24 +124,24 @@ namespace PaintClient
         {
             try
             {
-                UdpClient udpClient = new UdpClient();
                 string ip = ipTextBox.Text;
                 int port = int.Parse(portTextBox.Text);
 
-                udpClient.Connect(ip, port: port);
+                //udpClient.Connect(ip, port: port);
 
                 Byte[] sendBytes = Encoding.ASCII.GetBytes("connect");
-                udpClient.Send(sendBytes, sendBytes.Length);
+                udpClient.Send(sendBytes, sendBytes.Length, ip, port);
 
                 IPEndPoint remoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 Byte[] receiveBytes = udpClient.Receive(ref remoteIpEndPoint);
                 int returnData = BitConverter.ToInt32(receiveBytes);
 
                 Debug.WriteLine("Odebrano: " + returnData.ToString());
+                drawServerPort = returnData;
 
                 connectedToServer = true;
                 ManageConnectionChange();
-                udpClient.Close();
+                //udpClient.Close();
             }
             catch(Exception e)
             {
@@ -148,17 +153,17 @@ namespace PaintClient
         {
             try
             {
-                UdpClient udpClient = new UdpClient();
                 string ip = ipTextBox.Text;
                 int port = int.Parse(portTextBox.Text);
 
-                udpClient.Connect(ip, port: port);
+                //udpClient.Connect(ip, port: port);
                 Byte[] sendBytes = Encoding.ASCII.GetBytes("disconnect");
-                udpClient.Send(sendBytes, sendBytes.Length);
+                udpClient.Send(sendBytes, sendBytes.Length, ip, port);
 
+                drawServerPort = -1;
                 connectedToServer = false;
                 ManageConnectionChange();
-                udpClient.Close();
+                //udpClient.Close();
             }
             catch(Exception e)
             {
