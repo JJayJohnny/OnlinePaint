@@ -15,7 +15,7 @@
             <RowDefinition Height="2*"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Canvas Name="paintCanvas" Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" MouseMove="CanvasMouseMove" MouseUp="CanvasMouseUp" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Black"/>
+        <Canvas Name="paintCanvas" Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" MouseMove="CanvasMouseMove" MouseUp="CanvasMouseUp" MouseDown="CanvasMouseDown" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Black"/>
 
 
         <Button Name="colorPicker" Click="ChoseColor" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" Margin="20,20,20,20" VerticalAlignment="Stretch" Background="Red" />

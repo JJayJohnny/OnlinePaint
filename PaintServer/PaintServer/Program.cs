@@ -32,6 +32,7 @@ namespace PaintServer
 
             connectTask = Task.Factory.StartNew(() => ListenConnections());
             receiveDataTask = Task.Factory.StartNew(() => ReceiveData());
+            sendDataTask = Task.Factory.StartNew(() => SendData());
 
             Console.WriteLine("Connection server running on port: " + ((IPEndPoint)connectServer.Client.LocalEndPoint).Port);
 
@@ -86,11 +87,11 @@ namespace PaintServer
                     Buffer.BlockCopy(receivedBytes, 0, storeData, 1, receivedBytes.Length);
                     drawData.Add(storeData);
 
-                    /*byte[] x = new byte[8];
+                    byte[] x = new byte[8];
                     byte[] y = new byte[8];
                     Array.Copy(receivedBytes, 0, x, 0, 8);
                     Array.Copy(receivedBytes, 8, y, 0, 8);
-                    Console.WriteLine("Received " + BitConverter.ToDouble(x)+" "+BitConverter.ToDouble(y) + " from user " + userId);*/
+                    Console.WriteLine("Received " + BitConverter.ToDouble(x) + " " + BitConverter.ToDouble(y) + " from user " + userId);
                     //Console.WriteLine(receivedBytes.Length.ToString() +" "+ userId.GetType().ToString());
                 }
                 catch(Exception e)
@@ -108,6 +109,28 @@ namespace PaintServer
                     return users.IndexOf(u);
             }
             return -1;
+        }
+
+        private static void SendData()
+        {
+            while (true)
+            {
+                try
+                {
+                    byte[] message = drawData.Take();
+                    foreach(IPEndPoint user in users)
+                    {
+                        if (GetUserId(user) != Convert.ToInt32(message[0]))
+                        {
+                            drawDataServer.Send(message, message.Length, user);
+                        }
+                    }
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+            }
         }
     }
 }

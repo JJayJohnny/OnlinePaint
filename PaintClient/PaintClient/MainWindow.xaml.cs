@@ -27,20 +27,21 @@ namespace PaintClient
     /// </summary>
     public partial class MainWindow : Window
     {
-        Task drawTask;
-        BlockingCollection<Tuple<Point, SolidColorBrush>> pointQueue;
-        bool drawGap = true;
+        Task receiveDataTask;
+        
         bool connectedToServer = false;
         UdpClient udpClient;
         int drawServerPort;
 
+        Point lastDrawnPoint;
+        bool liftPen = true;
+
         public MainWindow()
         {
             InitializeComponent();
-            pointQueue = new BlockingCollection<Tuple<Point, SolidColorBrush>>(new ConcurrentQueue<Tuple<Point, SolidColorBrush>>());
             udpClient = new UdpClient();
 
-            drawTask = Task.Factory.StartNew(() => DrawTask());
+            lastDrawnPoint = new Point();
         }
 
         private void ChoseColor(object sender, RoutedEventArgs args)
@@ -61,7 +62,7 @@ namespace PaintClient
             Point point = e.GetPosition(this.paintCanvas);
             if(e.LeftButton == MouseButtonState.Pressed)
             {
-                pointQueue.Add(new Tuple<Point, SolidColorBrush>(point, (SolidColorBrush)colorPicker.Background));
+                DrawLine(new Tuple<Point, SolidColorBrush>(point, (SolidColorBrush)colorPicker.Background));
 
                 //send data to server
                 if (connectedToServer)
@@ -86,57 +87,32 @@ namespace PaintClient
 
         public void CanvasMouseUp(object sender, MouseEventArgs e)
         {
-            drawGap = true;
+            liftPen = true;
+        }
+        public void CanvasMouseDown(object sender, MouseEventArgs e)
+        {
+            
         }
 
         public void DrawLine(Tuple<Point, SolidColorBrush> point)
         {
-                Line line = new Line()
-                {
-                    X1 = point.Item1.X-1,
-                    Y1 = point.Item1.Y-1,
-                    X2 = point.Item1.X,
-                    Y2 = point.Item1.Y,
-                    Stroke = point.Item2,
-                    StrokeThickness = 4,
-                };
-                paintCanvas.Children.Add(line);
-        }
-
-        private void DrawTask()
-        {
-            
-            Tuple<Point, SolidColorBrush> lastPoint = new Tuple<Point, SolidColorBrush>(new Point(), null);
-            while (true) {
-                try
-                {
-                    var point = pointQueue.Take();
-                    drawGap = !drawGap;
-                    if (drawGap)
-                    {                      
-                        Dispatcher.Invoke(() =>
-                        {
-                            Line line = new Line()
-                            {
-                                X1 = point.Item1.X,
-                                Y1 = point.Item1.Y,
-                                X2 = lastPoint.Item1.X,
-                                Y2 = lastPoint.Item1.Y,
-                                Stroke = point.Item2,
-                                StrokeThickness = 4,
-                            };
-                            paintCanvas.Children.Add(line);
-                        });
-                        pointQueue.Add(point);
-                    }
-                    else
-                        lastPoint = point;
-                }
-                catch (InvalidOperationException)
-                {
-
-                }
+            Line line = new Line()
+            {
+                X1 = lastDrawnPoint.X,
+                Y1 = lastDrawnPoint.Y,
+                X2 = point.Item1.X,
+                Y2 = point.Item1.Y,
+                Stroke = point.Item2,
+                StrokeThickness = 4,
+            };
+            if (liftPen)
+            {
+                line.X1 = line.X2 - 1;
+                line.Y1 = line.Y2 - 1;
+                liftPen = false;
             }
+            paintCanvas.Children.Add(line);
+            lastDrawnPoint = point.Item1;     
         }
 
         private void ConnectClick(object sender, RoutedEventArgs args)
@@ -160,6 +136,7 @@ namespace PaintClient
 
                 connectedToServer = true;
                 ManageConnectionChange();
+                receiveDataTask = Task.Factory.StartNew(() => ReceiveData());
                 //udpClient.Close();
             }
             catch(Exception e)
@@ -197,6 +174,33 @@ namespace PaintClient
             connectButton.IsEnabled = !connectedToServer;
 
             disconnectButton.IsEnabled = connectedToServer;
+        }
+
+        private void ReceiveData()
+        {
+            while (connectedToServer)
+            {
+                try
+                {
+                    IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
+                    byte[] message = udpClient.Receive(ref sender);
+                paintCanvas.Dispatcher.Invoke(new Action(() =>
+                {
+                    byte[] x = new byte[8];
+                    byte[] y = new byte[8];
+                    Array.Copy(message, 1, x, 0, 8);
+                    Array.Copy(message, 9, y, 0, 8);
+                    Debug.WriteLine(BitConverter.ToDouble(x) + " " + BitConverter.ToDouble(y));
+                    Point p = new Point(BitConverter.ToDouble(x), BitConverter.ToDouble(y));
+                    SolidColorBrush b = new SolidColorBrush(Color.FromRgb(100, 100, 100));
+                    DrawLine(new Tuple<Point, SolidColorBrush>(p, b));
+                }));
+                }
+                catch(Exception e)
+                {
+                    Debug.WriteLine(e.ToString());
+                }
+            }
         }
     }
 }
