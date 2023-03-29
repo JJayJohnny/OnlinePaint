@@ -21,8 +21,8 @@ namespace PaintServer
         static List<IPEndPoint> users;
         static BlockingCollection<byte[]> drawData;
 
-        const int connectPort = 6666;
-        const int drawPort = 5555;
+        const int connectPort = 7777;
+        const int drawPort = 7778;
         static void Main(string[] args)
         {
             users = new List<IPEndPoint>();
@@ -58,9 +58,9 @@ namespace PaintServer
                     if(message == "disconnect")
                     {
                         Console.WriteLine(clientEndPoint.ToString() + " disconnected");
-                        users.Remove(clientEndPoint);                       
+                        users.Remove(clientEndPoint);
                     }
-                    Console.WriteLine("Liczba zalogowanych uzytkownikow: "+users.Count);
+                    Console.WriteLine("Number of logged-in users: "+users.Count);
                 }
                 catch(Exception e)
                 {
@@ -79,6 +79,15 @@ namespace PaintServer
                     byte[] receivedBytes = drawDataServer.Receive(ref clientEndPoint);
 
                     //determine what kind of data is this
+                    switch (receivedBytes.Length)
+                    {
+                        case 11:
+                            Console.WriteLine(clientEndPoint.Address.ToString() + ":" + clientEndPoint.Port.ToString() + " started drawing");
+                            break;
+                        case 1:
+                            Console.WriteLine(clientEndPoint.Address.ToString() + ":" + clientEndPoint.Port.ToString() + " stopped drawing");
+                            break;
+                    }
 
                     byte userId = Convert.ToByte(GetUserId(clientEndPoint));
 

@@ -47,6 +47,7 @@ namespace PaintClient
             lastDrawnPoint = new Point();
             myPenColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
             thicknessSlider.ValueChanged += ThicknessSliderChanged;
+            thicknessLabel.Content = "Thickness: " + thicknessSlider.Value.ToString("0.00");
         }
 
         private void ChoseColor(object sender, RoutedEventArgs args)
@@ -165,11 +166,11 @@ namespace PaintClient
 
                 //udpClient.Connect(ip, port: port);
 
-                Byte[] sendBytes = Encoding.ASCII.GetBytes("connect");
+                byte[] sendBytes = Encoding.ASCII.GetBytes("connect");
                 udpClient.Send(sendBytes, sendBytes.Length, ip, port);
 
                 IPEndPoint remoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                Byte[] receiveBytes = udpClient.Receive(ref remoteIpEndPoint);
+                byte[] receiveBytes = udpClient.Receive(ref remoteIpEndPoint);
                 int returnData = BitConverter.ToInt32(receiveBytes);
 
                 Debug.WriteLine("Odebrano: " + returnData.ToString());
@@ -183,6 +184,7 @@ namespace PaintClient
             catch(Exception e)
             {
                 Debug.WriteLine(e.ToString());
+                MessageBox.Show("Error connecting to server", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -193,7 +195,6 @@ namespace PaintClient
                 string ip = ipTextBox.Text;
                 int port = int.Parse(portTextBox.Text);
 
-                //udpClient.Connect(ip, port: port);
                 Byte[] sendBytes = Encoding.ASCII.GetBytes("disconnect");
                 udpClient.Send(sendBytes, sendBytes.Length, ip, port);
 
@@ -201,6 +202,9 @@ namespace PaintClient
                 connectedToServer = false;
                 ManageConnectionChange();
                 //udpClient.Close();
+
+                udpClient.Close();
+                udpClient = new UdpClient();
             }
             catch(Exception e)
             {
