@@ -46,6 +46,7 @@ namespace PaintClient
 
             lastDrawnPoint = new Point();
             myPenColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
+            thicknessSlider.ValueChanged += ThicknessSliderChanged;
         }
 
         private void ChoseColor(object sender, RoutedEventArgs args)
@@ -67,7 +68,7 @@ namespace PaintClient
             Point point = e.GetPosition(this.paintCanvas);
             if(e.LeftButton == MouseButtonState.Pressed)
             {
-                DrawLine(new Tuple<Point, SolidColorBrush>(point, (SolidColorBrush)colorPicker.Background));
+                DrawLine(new Tuple<Point, SolidColorBrush, double>(point, (SolidColorBrush)colorPicker.Background, thicknessSlider.Value));
 
                 //send data to server
                 if (connectedToServer)
@@ -116,7 +117,7 @@ namespace PaintClient
                 try
                 {
                     string ip = ipTextBox.Text;
-                    byte[] thickness = BitConverter.GetBytes((double)4);
+                    byte[] thickness = BitConverter.GetBytes(thicknessSlider.Value);
                     byte red = myPenColor.Color.R;
                     byte green = myPenColor.Color.G;
                     byte blue = myPenColor.Color.B;
@@ -134,7 +135,7 @@ namespace PaintClient
             }
         }
 
-        public void DrawLine(Tuple<Point, SolidColorBrush> point)
+        public void DrawLine(Tuple<Point, SolidColorBrush, double> point)
         {
             Line line = new Line()
             {
@@ -143,7 +144,7 @@ namespace PaintClient
                 X2 = point.Item1.X,
                 Y2 = point.Item1.Y,
                 Stroke = point.Item2,
-                StrokeThickness = 4,
+                StrokeThickness = point.Item3,
             };
             if (liftPen)
             {
@@ -152,7 +153,7 @@ namespace PaintClient
                 liftPen = false;
             }
             paintCanvas.Children.Add(line);
-            lastDrawnPoint = point.Item1;     
+            lastDrawnPoint = point.Item1;
         }
 
         private void ConnectClick(object sender, RoutedEventArgs args)
@@ -281,8 +282,13 @@ namespace PaintClient
                 Debug.WriteLine(BitConverter.ToDouble(x) + " " + BitConverter.ToDouble(y));
                 Point p = new Point(BitConverter.ToDouble(x), BitConverter.ToDouble(y));
                 //SolidColorBrush b = new SolidColorBrush(Color.FromRgb(100, 100, 100));
-                DrawLine(new Tuple<Point, SolidColorBrush>(p, receivedPenColor));
+                DrawLine(new Tuple<Point, SolidColorBrush, double>(p, receivedPenColor, receivedPenThickness));
             
+        }
+
+        private void ThicknessSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> args)
+        {
+            thicknessLabel.Content = "Thickness: "+thicknessSlider.Value.ToString("0.00");
         }
     }
 }
