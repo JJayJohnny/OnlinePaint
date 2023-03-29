@@ -87,11 +87,11 @@ namespace PaintServer
                     Buffer.BlockCopy(receivedBytes, 0, storeData, 1, receivedBytes.Length);
                     drawData.Add(storeData);
 
-                    byte[] x = new byte[8];
+                    /*byte[] x = new byte[8];
                     byte[] y = new byte[8];
                     Array.Copy(receivedBytes, 0, x, 0, 8);
                     Array.Copy(receivedBytes, 8, y, 0, 8);
-                    Console.WriteLine("Received " + BitConverter.ToDouble(x) + " " + BitConverter.ToDouble(y) + " from user " + userId);
+                    Console.WriteLine("Received " + BitConverter.ToDouble(x) + " " + BitConverter.ToDouble(y) + " from user " + userId);*/
                     //Console.WriteLine(receivedBytes.Length.ToString() +" "+ userId.GetType().ToString());
                 }
                 catch(Exception e)

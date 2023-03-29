@@ -34,6 +34,9 @@ namespace PaintClient
         int drawServerPort;
 
         Point lastDrawnPoint;
+        SolidColorBrush receivedPenColor;
+        double receivedPenThickness;
+        SolidColorBrush myPenColor;
         bool liftPen = true;
 
         public MainWindow()
@@ -42,6 +45,7 @@ namespace PaintClient
             udpClient = new UdpClient();
 
             lastDrawnPoint = new Point();
+            myPenColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
         }
 
         private void ChoseColor(object sender, RoutedEventArgs args)
@@ -54,6 +58,7 @@ namespace PaintClient
                     colorDialog.Color.G,
                     colorDialog.Color.B));
                 colorPicker.Background = brush;
+                myPenColor = brush;
             }
         }
 
@@ -88,10 +93,45 @@ namespace PaintClient
         public void CanvasMouseUp(object sender, MouseEventArgs e)
         {
             liftPen = true;
+            if (connectedToServer)
+            {
+                try
+                {
+                    string ip = ipTextBox.Text;
+                    byte[] message = new byte[1];
+                    message[0] = (byte)0;
+                    udpClient.Send(message, message.Length, ip, drawServerPort);
+                }
+                catch(Exception ex)
+                {
+                    Debug.WriteLine(ex);
+                }
+            }
         }
         public void CanvasMouseDown(object sender, MouseEventArgs e)
         {
-            
+            //liftPen = false;
+            if (connectedToServer)
+            {
+                try
+                {
+                    string ip = ipTextBox.Text;
+                    byte[] thickness = BitConverter.GetBytes((double)4);
+                    byte red = myPenColor.Color.R;
+                    byte green = myPenColor.Color.G;
+                    byte blue = myPenColor.Color.B;
+                    byte[] message = new byte[thickness.Length + 3];
+                    Buffer.BlockCopy(thickness, 0, message, 0, thickness.Length);
+                    message[8] = red;
+                    message[9] = green;
+                    message[10] = blue;
+                    udpClient.Send(message, message.Length, ip, drawServerPort);
+                }
+                catch(Exception ex)
+                {
+                    Debug.WriteLine(ex);
+                }
+            }
         }
 
         public void DrawLine(Tuple<Point, SolidColorBrush> point)
@@ -181,26 +221,68 @@ namespace PaintClient
             while (connectedToServer)
             {
                 try
-                {
+                {                    
                     IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
                     byte[] message = udpClient.Receive(ref sender);
-                paintCanvas.Dispatcher.Invoke(new Action(() =>
-                {
-                    byte[] x = new byte[8];
-                    byte[] y = new byte[8];
-                    Array.Copy(message, 1, x, 0, 8);
-                    Array.Copy(message, 9, y, 0, 8);
-                    Debug.WriteLine(BitConverter.ToDouble(x) + " " + BitConverter.ToDouble(y));
-                    Point p = new Point(BitConverter.ToDouble(x), BitConverter.ToDouble(y));
-                    SolidColorBrush b = new SolidColorBrush(Color.FromRgb(100, 100, 100));
-                    DrawLine(new Tuple<Point, SolidColorBrush>(p, b));
-                }));
+                    paintCanvas.Dispatcher.Invoke(new Action(() =>
+                    {
+                        Debug.WriteLine(message.Length);
+                        switch (message.Length)
+                        {
+                            case 2:
+                                //koniec pisania
+                                ReceivedEnd();
+                                break;
+                            case 12:
+                                //poczatek pisania
+                                ReceivedStart(message);
+                                break;
+                            case 17:
+                                //punkt rysunku
+                                ReceivedPoint(message);
+                                break;
+                            default:
+                                Debug.WriteLine("Nieznana wiadomosc");
+                                break;
+                        }
+                    }));
                 }
                 catch(Exception e)
                 {
                     Debug.WriteLine(e.ToString());
                 }
             }
+        }
+
+        private void ReceivedEnd()
+        {
+            liftPen = true;
+        }
+
+        private void ReceivedStart(byte[] message)
+        {
+            byte[] thickness = new byte[8];
+            byte red, green, blue;
+            Array.Copy(message, 1, thickness, 0, 8);
+            red = message[9];
+            green = message[10];
+            blue = message[11];
+            receivedPenColor = new SolidColorBrush(Color.FromRgb(red, green, blue));
+            receivedPenThickness = BitConverter.ToDouble(thickness);
+        }
+
+        private void ReceivedPoint(byte[] message)
+        {
+            
+                byte[] x = new byte[8];
+                byte[] y = new byte[8];
+                Array.Copy(message, 1, x, 0, 8);
+                Array.Copy(message, 9, y, 0, 8);
+                Debug.WriteLine(BitConverter.ToDouble(x) + " " + BitConverter.ToDouble(y));
+                Point p = new Point(BitConverter.ToDouble(x), BitConverter.ToDouble(y));
+                //SolidColorBrush b = new SolidColorBrush(Color.FromRgb(100, 100, 100));
+                DrawLine(new Tuple<Point, SolidColorBrush>(p, receivedPenColor));
+            
         }
     }
 }
